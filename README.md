@@ -1,3 +1,18 @@
+---
+title: Inventory Restocking System
+emoji: 📦
+colorFrom: blue
+colorTo: green
+sdk: streamlit
+sdk_version: 1.31.0
+app_file: app.py
+pinned: false
+---
+
+# Inventory Restocking Project
+(Your existing description goes here...)
+
+
 # Inventory Restocking Decision System - OpenEnv Environment
 
 A complete OpenEnv implementation for AI agent-based inventory optimization. The environment simulates a multi-SKU warehouse where agents learn to make optimal restocking decisions while minimizing costs and preventing stockouts.
