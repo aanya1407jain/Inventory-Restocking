@@ -1,0 +1,156 @@
+name: inventory-management
+version: "1.0"
+description: "AI agent optimizes inventory restocking decisions to minimize cost while preventing stockouts"
+author: "OpenEnv Hackathon Participant"
+
+# Environment metadata
+metadata:
+  domain: "operations-research"
+  difficulty: "medium"
+  language: "python"
+  framework: "openenv"
+
+# Action space specification
+action_space:
+  type: "object"
+  title: "InventoryAction"
+  required: ["product_id", "quantity", "reorder"]
+  properties:
+    product_id:
+      type: "string"
+      title: "Product SKU"
+      description: "Which product to act on (SKU001, SKU002, SKU003)"
+      enum: ["SKU001", "SKU002", "SKU003"]
+    quantity:
+      type: "integer"
+      title: "Order Quantity"
+      description: "How many units to reorder"
+      minimum: 0
+      maximum: 200
+      default: 0
+    reorder:
+      type: "boolean"
+      title: "Place Order"
+      description: "Whether to execute the reorder"
+      default: false
+
+# Observation space specification
+observation_space:
+  type: "object"
+  title: "InventoryState"
+  required: ["products", "demand_history", "current_day", "total_cost", "stockouts_count"]
+  properties:
+    products:
+      type: "object"
+      title: "Current Inventory"
+      description: "Current stock levels for each SKU"
+      additionalProperties:
+        type: "integer"
+        minimum: 0
+    demand_history:
+      type: "array"
+      title: "Demand History"
+      description: "Last 7 days of aggregate demand"
+      items:
+        type: "integer"
+        minimum: 0
+      maxItems: 7
+    lead_time:
+      type: "integer"
+      title: "Lead Time"
+      description: "Days until current order arrives"
+      minimum: 0
+    current_day:
+      type: "integer"
+      title: "Current Day"
+      description: "Simulation day number (0-30)"
+      minimum: 0
+      maximum: 30
+    total_cost:
+      type: "number"
+      title: "Total Cost"
+      description: "Cumulative ordering and holding costs"
+      minimum: 0
+    stockouts_count:
+      type: "integer"
+      title: "Stockout Count"
+      description: "Number of stockout events so far"
+      minimum: 0
+    last_action:
+      type: ["string", "null"]
+      title: "Last Action"
+      description: "Human-readable description of last action"
+
+# Task definitions
+tasks:
+  - name: "easy"
+    description: "Recognize critical stock levels and order before stockout"
+    objective: "Minimize stockouts through reactive reordering"
+    max_steps: 30
+    evaluation_metric: "stockout_avoidance"
+    success_criteria: "Achieve >70% score by avoiding stockouts"
+    hint: "Monitor inventory levels and reorder when stock drops below 20% of mean demand"
+    
+  - name: "medium"
+    description: "Predict demand patterns and maintain service level >95%"
+    objective: "Optimize reorder timing using demand forecasts"
+    max_steps: 30
+    evaluation_metric: "service_level"
+    success_criteria: "Achieve >70% score with 95% demand satisfaction"
+    hint: "Track demand_history to forecast next week and adjust order timing accordingly"
+    
+  - name: "hard"
+    description: "Minimize total cost while maintaining 99% service level"
+    objective: "Multi-objective optimization: minimize cost + maintain service"
+    max_steps: 30
+    evaluation_metric: "cost_efficiency_ratio"
+    success_criteria: "Achieve >70% score by balancing cost and service"
+    hint: "Calculate cost per unit held vs cost of stockout; optimize SKU-specific lead times"
+
+# Grading configuration
+grading:
+  type: "automated"
+  per_task: true
+  reward_range: [0.0, 1.0]
+  reward_format: "float"
+  steps:
+    - name: "immediate"
+      type: "per_step"
+      description: "Reward calculated after each step based on action quality"
+    - name: "episodic"
+      type: "end_of_episode"
+      description: "Final score computed from full episode metrics"
+
+# Environment parameters
+parameters:
+  max_days: 30
+  max_inventory: 200
+  lead_time_days: 3
+  
+  skus:
+    SKU001:
+      initial_stock: 80
+      daily_demand_mean: 12
+      daily_demand_std: 3
+      holding_cost_per_unit: 0.5
+      order_cost: 15
+      
+    SKU002:
+      initial_stock: 50
+      daily_demand_mean: 8
+      daily_demand_std: 2
+      holding_cost_per_unit: 0.8
+      order_cost: 20
+      
+    SKU003:
+      initial_stock: 120
+      daily_demand_mean: 18
+      daily_demand_std: 4
+      holding_cost_per_unit: 0.3
+      order_cost: 12
+
+# API endpoints (for deployment)
+endpoints:
+  reset: "/reset"
+  step: "/step"
+  state: "/state"
